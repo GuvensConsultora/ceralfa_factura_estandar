@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Mejoras visuales al header estándar argentino (l10n_ar.custom_header).
+        Por qué: El header nativo tiene exceso de espacio y sin identidad visual.
+        Patrón: Herencia XPath → no rompe la cadena de herencia existente (a2systems QR, USD, etc).
+    -->
+    <template id="custom_header_visual" inherit_id="l10n_ar.custom_header">
+        <!-- Fondo sutil y borde inferior al contenedor principal del header -->
+        <xpath expr="//div[@class='mb-3']" position="attributes">
+            <attribute name="style">background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 15px 10px; border-radius: 4px;</attribute>
+        </xpath>
+    </template>
+
+    <!--
+        Mejoras visuales al documento de factura estándar l10n_ar.
+        Por qué: Mejorar aspecto profesional sin romper herencias existentes.
+        Patrón: Solo modifica atributos de estilo (no estructura) → compatible con cualquier módulo que herede.
+    -->
+    <template id="l10n_ar_visual_improvements" inherit_id="l10n_ar.report_invoice_document">
+
+        <!-- 1. Mejorar spacing y tipografía del bloque informaciones -->
+        <xpath expr="//div[@id='informations']" position="attributes">
+            <attribute name="class">row mt-3 mb-3</attribute>
+            <attribute name="style">font-size: 11px;</attribute>
+        </xpath>
+
+        <!-- 2. Borde y padding al bloque izquierdo (datos del cliente) -->
+        <xpath expr="//div[@id='informations']/div[@class='col-6'][1]" position="attributes">
+            <attribute name="style">border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;</attribute>
+        </xpath>
+
+        <!-- 3. Borde y padding al bloque derecho (datos de la factura) -->
+        <xpath expr="//div[@id='informations']/div[@class='col-6'][2]" position="attributes">
+            <attribute name="style">border: 1px solid #dee2e6; border-radius: 4px; padding: 10px;</attribute>
+        </xpath>
+
+        <!-- 4. Fondo gris claro en header de la tabla de líneas -->
+        <xpath expr="//table[@name='invoice_line_table']/thead/tr" position="attributes">
+            <attribute name="style">background-color: #f8f9fa;</attribute>
+        </xpath>
+
+        <!-- 5. Separador visual marcado antes de la sección de totales -->
+        <xpath expr="//div[@id='total']" position="attributes">
+            <attribute name="style">border-top: 2px solid #000; padding-top: 10px;</attribute>
+        </xpath>
+
+    </template>
+
+</odoo>

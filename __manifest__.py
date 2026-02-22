@@ -16,6 +16,7 @@
     ],
     "data": [
         "views/res_partner_views.xml",
+        "views/report_l10n_ar_override.xml",
         "report/report_invoice_arca.xml",
     ],
     "installable": True,

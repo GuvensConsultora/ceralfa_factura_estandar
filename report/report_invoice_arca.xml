@@ -14,15 +14,15 @@
         </xpath>
     </template>
 
-    <!-- Documento individual de factura ARCA -->
+    <!--
+        Template standalone premium ARCA.
+        - Tablas HTML (no flexbox) → compatible wkhtmltopdf
+        - display_type == 'product' → Odoo 19 (ya no es False)
+        - Sin hasattr() → no disponible en sandbox QWeb
+        - Usa sub-template account.document_tax_totals → estructura Odoo 19
+        - Colores dinámicos: primary_color / secondary_color de la empresa
+    -->
     <template id="report_invoice_arca_document">
-        <!--
-            Template standalone con formato ARCA limpio.
-            - Tablas HTML (no flexbox) → compatible wkhtmltopdf
-            - display_type == 'product' → Odoo 19 (ya no es False)
-            - Sin hasattr() → no disponible en sandbox QWeb
-            - Usa sub-template account.document_tax_totals → estructura Odoo 19
-        -->
         <t t-call="web.external_layout">
             <t t-set="o" t-value="o.with_context(lang=lang)"/>
 
@@ -34,10 +34,14 @@
             <!-- Tipo de documento: usa report_name de l10n_latam (mismo patrón que l10n_ar estándar) -->
             <t t-set="tipo_doc" t-value="o.l10n_latam_document_type_id.report_name or 'Factura'"/>
 
-            <div class="page" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px;">
+            <!-- Colores de empresa (fallback a defaults sobrios) -->
+            <t t-set="color_primario" t-value="o.company_id.primary_color or '#333'"/>
+            <t t-set="color_secundario" t-value="o.company_id.secondary_color or '#666'"/>
+
+            <div class="page" style="font-family: Arial, Helvetica, sans-serif; font-size: 11px;">
 
                 <!-- ==================== HEADER ==================== -->
-                <table style="width: 100%; margin-bottom: 10px;">
+                <table style="width: 100%; margin-bottom: 20px;">
                     <tr>
                         <!-- Izquierda: Logo + datos empresa -->
                         <td style="width: 38%; vertical-align: top;">
@@ -64,44 +68,45 @@
 
                         <!-- Centro: Letra grande + código AFIP -->
                         <td style="width: 14%; text-align: center; vertical-align: top;">
-                            <div style="border: 2px solid #000; display: inline-block; padding: 5px 18px; margin-top: 5px;">
-                                <span style="font-size: 42px; font-weight: bold;" t-esc="letra"/>
+                            <div t-att-style="'border: 2px solid %s; display: inline-block; padding: 5px 18px; margin-top: 5px;' % color_primario">
+                                <span style="font-size: 44px; font-weight: bold;" t-esc="letra"/>
                             </div>
-                            <div t-if="cod_afip" style="font-size: 9px; margin-top: 2px;">
+                            <div t-if="cod_afip" style="font-size: 9px; margin-top: 3px; color: #666;">
                                 Cod. <span t-esc="'%02d' % int(cod_afip) if cod_afip else ''"/>
                             </div>
                         </td>
 
                         <!-- Derecha: Tipo doc + datos factura -->
                         <td style="width: 38%; text-align: right; vertical-align: top;">
-                            <div style="font-size: 18px; font-weight: bold; margin-bottom: 6px;"
-                                 t-att-style="'color: %s;' % (o.company_id.primary_color or '#000')">
+                            <div style="font-size: 20px; font-weight: bold; margin-bottom: 8px;"
+                                 t-att-style="'color: %s;' % color_primario">
                                 <span t-esc="tipo_doc"/>
                             </div>
                             <div style="font-size: 10px; line-height: 1.6;">
-                                <span t-att-style="'color: %s;' % (o.company_id.secondary_color or '#666')">Nro: </span>
+                                <span t-att-style="'color: %s;' % color_secundario">Nro: </span>
                                 <span t-field="o.l10n_latam_document_number"/><br/>
-                                <span t-att-style="'color: %s;' % (o.company_id.secondary_color or '#666')">Fecha: </span>
+                                <span t-att-style="'color: %s;' % color_secundario">Fecha: </span>
                                 <span t-field="o.invoice_date"/><br/>
                                 <span t-field="o.company_id.l10n_ar_afip_responsibility_type_id"/>
-                                <span t-att-style="'color: %s;' % (o.company_id.secondary_color or '#666')"> - CUIT: </span>
+                                <span t-att-style="'color: %s;' % color_secundario"> - CUIT: </span>
                                 <span t-field="o.company_id.partner_id.l10n_ar_formatted_vat"/><br/>
-                                <span t-att-style="'color: %s;' % (o.company_id.secondary_color or '#666')">IIBB: </span>
+                                <span t-att-style="'color: %s;' % color_secundario">IIBB: </span>
                                 <span t-esc="o.company_id.l10n_ar_gross_income_number or 'Exento'"/>
-                                <span t-att-style="'color: %s;' % (o.company_id.secondary_color or '#666')"> - Inicio Act.: </span>
+                                <span t-att-style="'color: %s;' % color_secundario"> - Inicio Act.: </span>
                                 <span t-field="o.company_id.l10n_ar_afip_start_date"/>
                             </div>
                         </td>
                     </tr>
                 </table>
 
-                <hr style="border: 1px solid #000; margin: 5px 0 10px 0;"/>
+                <!-- Línea divisoria con color empresa -->
+                <hr t-att-style="'border: none; border-bottom: 2px solid %s; margin: 0 0 20px 0;' % color_primario"/>
 
                 <!-- ==================== DATOS CLIENTE + DETALLES ==================== -->
-                <table style="width: 100%; margin-bottom: 15px;">
+                <table style="width: 100%; margin-bottom: 20px;">
                     <tr>
                         <!-- Izquierda: Datos del cliente -->
-                        <td style="width: 48%; border: 1px solid #ccc; padding: 8px; font-size: 10px; line-height: 1.5; vertical-align: top;">
+                        <td style="width: 48%; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; font-size: 10px; line-height: 1.5; vertical-align: top;">
                             <strong>Cliente:</strong>
                             <span t-field="o.partner_id.commercial_partner_id.name"/><br/>
                             <span t-field="o.partner_id"
@@ -117,7 +122,7 @@
                         <td style="width: 4%;"/>
 
                         <!-- Derecha: Detalles de la factura -->
-                        <td style="width: 48%; border: 1px solid #ccc; padding: 8px; font-size: 10px; line-height: 1.5; vertical-align: top;">
+                        <td style="width: 48%; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; font-size: 10px; line-height: 1.5; vertical-align: top;">
                             <t t-if="o.invoice_date_due">
                                 <strong>Fecha Vencimiento:</strong>
                                 <span t-field="o.invoice_date_due"/><br/>
@@ -141,15 +146,15 @@
                 <!-- ==================== TABLA DE LÍNEAS ==================== -->
                 <!-- Por qué: Mismo patrón que l10n_ar estándar con _l10n_ar_prices_and_taxes() -->
                 <t t-set="display_discount" t-value="any(l.discount for l in o.invoice_line_ids)"/>
-                <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 10px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 20px;">
                     <thead>
-                        <tr style="border-bottom: 2px solid #000;">
-                            <th style="text-align: left; padding: 5px;">Descripción</th>
-                            <th style="text-align: right; padding: 5px;">Cantidad</th>
-                            <th style="text-align: right; padding: 5px;">Precio Unit.</th>
-                            <th t-if="display_discount" style="text-align: right; padding: 5px;">Dto.%</th>
-                            <th style="text-align: center; padding: 5px;">% IVA</th>
-                            <th style="text-align: right; padding: 5px;">Importe</th>
+                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #000;">
+                            <th style="text-align: left; padding: 6px 8px;">Descripción</th>
+                            <th style="text-align: right; padding: 6px 8px;">Cantidad</th>
+                            <th style="text-align: right; padding: 6px 8px;">Precio Unit.</th>
+                            <th t-if="display_discount" style="text-align: right; padding: 6px 8px;">Dto.%</th>
+                            <th style="text-align: center; padding: 6px 8px;">% IVA</th>
+                            <th style="text-align: right; padding: 6px 8px;">Importe</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -157,27 +162,27 @@
                             <!-- Odoo 19: display_type='product' para líneas de producto -->
                             <t t-if="line.display_type == 'product'">
                                 <t t-set="l10n_ar_values" t-value="line._l10n_ar_prices_and_taxes()"/>
-                                <tr style="border-bottom: 1px solid #ddd;">
-                                    <td style="padding: 4px 5px;">
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 6px 8px;">
                                         <span t-field="line.name" t-options="{'widget': 'text'}"/>
                                     </td>
-                                    <td style="text-align: right; padding: 4px 5px; white-space: nowrap;">
+                                    <td style="text-align: right; padding: 6px 8px; white-space: nowrap;">
                                         <span t-field="line.quantity"/>
                                         <span t-field="line.product_uom_id" groups="uom.group_uom"/>
                                     </td>
-                                    <td style="text-align: right; padding: 4px 5px;">
+                                    <td style="text-align: right; padding: 6px 8px;">
                                         <span t-out="l10n_ar_values['price_unit']"
                                               t-options='{"widget": "float", "decimal_precision": "Product Price"}'/>
                                     </td>
-                                    <td t-if="display_discount" style="text-align: right; padding: 4px 5px;">
+                                    <td t-if="display_discount" style="text-align: right; padding: 6px 8px;">
                                         <span t-field="line.discount"/>
                                     </td>
-                                    <td style="text-align: center; padding: 4px 5px;">
+                                    <td style="text-align: center; padding: 6px 8px;">
                                         <t t-foreach="line.tax_ids" t-as="tax">
                                             <span t-if="tax.tax_group_id.l10n_ar_vat_afip_code" t-esc="tax.tax_label"/>
                                         </t>
                                     </td>
-                                    <td style="text-align: right; padding: 4px 5px;">
+                                    <td style="text-align: right; padding: 6px 8px;">
                                         <span t-out="l10n_ar_values['price_subtotal']"
                                               t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                                     </td>
@@ -186,7 +191,7 @@
                             <!-- Secciones -->
                             <t t-if="line.display_type == 'line_section'">
                                 <tr>
-                                    <td colspan="99" style="padding: 6px 5px; font-weight: bold;">
+                                    <td colspan="99" style="padding: 8px 8px 4px; font-weight: bold;">
                                         <span t-field="line.name" t-options="{'widget': 'text'}"/>
                                     </td>
                                 </tr>
@@ -194,7 +199,7 @@
                             <!-- Notas -->
                             <t t-if="line.display_type == 'line_note'">
                                 <tr>
-                                    <td colspan="99" style="padding: 3px 5px; font-style: italic;">
+                                    <td colspan="99" style="padding: 4px 8px; font-style: italic;">
                                         <span t-field="line.name" t-options="{'widget': 'text'}"/>
                                     </td>
                                 </tr>
@@ -205,7 +210,7 @@
 
                 <!-- ==================== TOTALES ==================== -->
                 <!-- Por qué: usa sub-template account.document_tax_totals (estructura Odoo 19 probada) -->
-                <table style="width: 100%; margin-bottom: 10px;">
+                <table style="width: 100%; margin-bottom: 20px;">
                     <tr>
                         <!-- Izquierda: Moneda y tipo de cambio -->
                         <td style="width: 48%; font-size: 10px; vertical-align: top;">
@@ -240,7 +245,7 @@
 
                 <!-- ==================== IMPUESTOS EN MONEDA COMPAÑÍA (multimoneda) ==================== -->
                 <t t-if="is_multimoneda and o.tax_totals and o.tax_totals.get('display_in_company_currency')">
-                    <div style="width: 48%; float: right; margin-bottom: 10px;">
+                    <div style="width: 48%; float: right; margin-bottom: 20px;">
                         <t t-set="tax_totals" t-value="o.tax_totals"/>
                         <t t-call="account.document_tax_totals_company_currency_template"/>
                     </div>
@@ -249,20 +254,20 @@
 
                 <!-- ==================== TÉRMINOS Y CONDICIONES ==================== -->
                 <t t-if="o.narration">
-                    <div style="font-size: 10px; margin-bottom: 10px; line-height: 1.4;">
+                    <div style="font-size: 10px; margin-bottom: 20px; line-height: 1.4;">
                         <strong>Términos y condiciones:</strong>
                         <span t-field="o.narration"/>
                     </div>
                 </t>
 
                 <!-- ==================== TOTAL EN LETRAS ==================== -->
-                <div style="font-size: 13px; font-weight: bold; margin: 10px 0;">
+                <div style="font-size: 12px; font-weight: bold; margin: 20px 0;">
                     Son: <span t-esc="o.currency_id.amount_to_text(o.amount_total)"/>
                 </div>
 
                 <!-- ==================== QR CODE + CAE ==================== -->
                 <!-- Campos de l10n_ar_afipws_fe (dependencia directa) -->
-                <div style="margin-top: 15px; border-top: 1px solid #000; padding-top: 8px;">
+                <div t-att-style="'margin-top: 20px; border-top: 2px solid %s; padding-top: 10px;' % color_primario">
                     <table style="width: 100%;">
                         <tr>
                             <td style="width: 60%; font-size: 10px; vertical-align: top;">
@@ -274,7 +279,7 @@
                             <td style="width: 40%; text-align: right; vertical-align: top;">
                                 <t t-if="o.qr_code">
                                     <img t-att-src="image_data_uri(o.qr_code)"
-                                         style="width: 130px; height: 130px;"
+                                         style="width: 140px; height: 140px;"
                                          alt="QR AFIP"/>
                                 </t>
                             </td>
