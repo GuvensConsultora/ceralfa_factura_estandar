@@ -58,8 +58,9 @@
                         Patrón: t-if con getattr seguro → evita error en docs sin el campo.
                     -->
                     <td style="width: 16%; text-align: center; vertical-align: top;">
-                        <!-- Por qué: En preview de Document Layout, o es None → guardar con "o and" -->
-                        <t t-set="doc_type" t-value="o and 'l10n_latam_document_type_id' in o._fields and o.l10n_latam_document_type_id"/>
+                        <!-- Por qué: En preview de Document Layout, o es None → t-if="o" obligatorio -->
+                        <t t-if="o">
+                        <t t-set="doc_type" t-value="o._fields.get('l10n_latam_document_type_id') and o.l10n_latam_document_type_id"/>
                         <t t-if="doc_type">
                             <t t-set="letra" t-value="doc_type.l10n_ar_letter or ''"/>
                             <t t-set="cod_afip" t-value="doc_type.code or ''"/>
@@ -70,6 +71,7 @@
                             <div t-if="cod_afip" style="font-size: 9px; margin-top: 3px; color: #666;">
                                 Cod. <span t-esc="'%02d' % int(cod_afip) if cod_afip else ''"/>
                             </div>
+                        </t>
                         </t>
                     </td>
 
@@ -139,7 +141,7 @@
                     <span t-field="company.report_footer"/>
                 </div>
                 <div class="text-end">
-                    <span t-if="report_type == 'pdf' and display_name_in_footer"
+                    <span t-if="report_type == 'pdf' and display_name_in_footer and o"
                           class="text-muted" t-out="str(o.name) + ', '">(document name)</span>
                     <span t-if="report_type == 'pdf'"
                           class="text-muted text-nowrap">Page <span class="page"/> / <span class="topage"/></span>
