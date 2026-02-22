@@ -58,7 +58,8 @@
                         Patrón: t-if con getattr seguro → evita error en docs sin el campo.
                     -->
                     <td style="width: 16%; text-align: center; vertical-align: top;">
-                        <t t-set="doc_type" t-value="o.l10n_latam_document_type_id if 'l10n_latam_document_type_id' in o._fields else False"/>
+                        <!-- Por qué: En preview de Document Layout, o es None → guardar con "o and" -->
+                        <t t-set="doc_type" t-value="o and 'l10n_latam_document_type_id' in o._fields and o.l10n_latam_document_type_id"/>
                         <t t-if="doc_type">
                             <t t-set="letra" t-value="doc_type.l10n_ar_letter or ''"/>
                             <t t-set="cod_afip" t-value="doc_type.code or ''"/>
