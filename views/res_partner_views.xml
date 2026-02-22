@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Por qué: Agregar checkbox en formulario de contacto para activar reporte ARCA -->
+    <!-- Patrón: Herencia xpath para extender vista existente -->
+    <record id="view_partner_form_arca" model="ir.ui.view">
+        <field name="name">res.partner.form.arca</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="account.view_partner_property_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='accounting']//group" position="after">
+                <group string="Factura ARCA">
+                    <field name="x_modelo_factura_arca"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
