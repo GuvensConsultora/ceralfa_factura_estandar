@@ -13,6 +13,7 @@
     <!-- Documento individual de factura ARCA -->
     <template id="report_invoice_arca_document">
         <!-- Por qué: Template standalone, no hereda del roto por CSS -->
+        <!-- Por qué: Usa tablas en vez de flexbox porque wkhtmltopdf no soporta display:flex -->
         <t t-call="web.external_layout">
             <t t-set="o" t-value="o"/>
 
@@ -29,90 +30,96 @@
             <div class="page" style="font-family: Arial, Helvetica, sans-serif; font-size: 12px;">
 
                 <!-- ==================== HEADER ==================== -->
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <!-- Por qué: table layout en vez de flex → compatible wkhtmltopdf -->
+                <table style="width: 100%; margin-bottom: 10px;">
+                    <tr>
+                        <!-- Izquierda: Logo + datos empresa -->
+                        <td style="width: 35%; vertical-align: top;">
+                            <img t-if="o.company_id.logo"
+                                 t-att-src="image_data_uri(o.company_id.logo)"
+                                 style="max-height: 70px; margin-bottom: 8px;"
+                                 alt="Logo"/>
+                            <div style="font-size: 11px; line-height: 1.4;">
+                                <strong t-field="o.company_id.name"/>
+                                <br/>
+                                <span t-field="o.company_id.partner_id"
+                                      t-options='{"widget": "contact", "fields": ["address"], "no_marker": true}'/>
+                                <t t-if="o.company_id.phone">
+                                    Tel: <span t-field="o.company_id.phone"/><br/>
+                                </t>
+                                <t t-if="o.company_id.website">
+                                    <span t-field="o.company_id.website"/><br/>
+                                </t>
+                                <t t-if="o.company_id.email">
+                                    <span t-field="o.company_id.email"/>
+                                </t>
+                            </div>
+                        </td>
 
-                    <!-- Izquierda: Logo + datos empresa -->
-                    <div style="width: 35%;">
-                        <img t-if="o.company_id.logo"
-                             t-att-src="image_data_uri(o.company_id.logo)"
-                             style="max-height: 70px; margin-bottom: 8px;"
-                             alt="Logo"/>
-                        <div style="font-size: 11px; line-height: 1.4;">
-                            <strong t-field="o.company_id.name"/>
-                            <br/>
-                            <span t-field="o.company_id.partner_id"
-                                  t-options='{"widget": "contact", "fields": ["address"], "no_marker": true}'/>
-                            <t t-if="o.company_id.phone">
-                                Tel: <span t-field="o.company_id.phone"/><br/>
-                            </t>
-                            <t t-if="o.company_id.website">
-                                <span t-field="o.company_id.website"/><br/>
-                            </t>
-                            <t t-if="o.company_id.email">
-                                <span t-field="o.company_id.email"/>
-                            </t>
-                        </div>
-                    </div>
+                        <!-- Centro: Letra grande + código AFIP -->
+                        <td style="width: 20%; text-align: center; vertical-align: top;">
+                            <div style="border: 2px solid #000; display: inline-block; padding: 5px 20px; margin-top: 5px;">
+                                <span style="font-size: 48px; font-weight: bold;" t-esc="letra"/>
+                            </div>
+                            <div style="font-size: 10px; margin-top: 2px;">
+                                Cod. <span t-esc="cod_afip"/>
+                            </div>
+                        </td>
 
-                    <!-- Centro: Letra grande + código AFIP -->
-                    <div style="width: 20%; text-align: center;">
-                        <div style="border: 2px solid #000; display: inline-block; padding: 5px 20px; margin-top: 5px;">
-                            <span style="font-size: 48px; font-weight: bold;" t-esc="letra"/>
-                        </div>
-                        <div style="font-size: 10px; margin-top: 2px;">
-                            Cod. <span t-esc="cod_afip"/>
-                        </div>
-                    </div>
-
-                    <!-- Derecha: Tipo doc + datos factura -->
-                    <div style="width: 35%; text-align: right;">
-                        <div style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">
-                            <span t-esc="tipo_doc"/>
-                        </div>
-                        <div style="font-size: 11px; line-height: 1.6;">
-                            <strong>Número:</strong> <span t-field="o.name"/><br/>
-                            <strong>Fecha:</strong> <span t-field="o.invoice_date"/><br/>
-                            <span t-field="o.company_id.l10n_ar_afip_responsibility_type_id"/>
-                            - CUIT: <span t-esc="o.company_id.partner_id.vat"/><br/>
-                            IIBB: <span t-esc="o.company_id.l10n_ar_gross_income_number or ''"/>
-                            - Inicio actividades: <span t-field="o.company_id.l10n_ar_afip_start_date"/>
-                        </div>
-                    </div>
-                </div>
+                        <!-- Derecha: Tipo doc + datos factura -->
+                        <td style="width: 35%; text-align: right; vertical-align: top;">
+                            <div style="font-size: 20px; font-weight: bold; margin-bottom: 8px;">
+                                <span t-esc="tipo_doc"/>
+                            </div>
+                            <div style="font-size: 11px; line-height: 1.6;">
+                                <strong>Número:</strong> <span t-field="o.name"/><br/>
+                                <strong>Fecha:</strong> <span t-field="o.invoice_date"/><br/>
+                                <span t-field="o.company_id.l10n_ar_afip_responsibility_type_id"/>
+                                - CUIT: <span t-esc="o.company_id.partner_id.vat"/><br/>
+                                IIBB: <span t-esc="o.company_id.l10n_ar_gross_income_number or ''"/>
+                                - Inicio actividades: <span t-field="o.company_id.l10n_ar_afip_start_date"/>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
 
                 <hr style="border: 1px solid #000; margin: 5px 0 10px 0;"/>
 
                 <!-- ==================== DATOS CLIENTE + DETALLES ==================== -->
-                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                <table style="width: 100%; margin-bottom: 15px;">
+                    <tr>
+                        <!-- Izquierda: Datos del cliente -->
+                        <td style="width: 48%; border: 1px solid #ccc; padding: 8px; font-size: 11px; line-height: 1.5; vertical-align: top;">
+                            <strong style="color: #28a745;">Cliente:</strong>
+                            <span t-field="o.partner_id.name"/><br/>
+                            <span t-field="o.partner_id"
+                                  t-options='{"widget": "contact", "fields": ["address"], "no_marker": true}'/><br/>
+                            <strong style="color: #28a745;">Cond. IVA:</strong>
+                            <span t-field="o.partner_id.l10n_ar_afip_responsibility_type_id"/><br/>
+                            <strong style="color: #28a745;">CUIT:</strong>
+                            <span t-esc="o.partner_id.vat or ''"/>
+                        </td>
 
-                    <!-- Izquierda: Datos del cliente -->
-                    <div style="width: 48%; border: 1px solid #ccc; padding: 8px; font-size: 11px; line-height: 1.5;">
-                        <strong style="color: #28a745;">Cliente:</strong>
-                        <span t-field="o.partner_id.name"/><br/>
-                        <span t-field="o.partner_id"
-                              t-options='{"widget": "contact", "fields": ["address"], "no_marker": true}'/><br/>
-                        <strong style="color: #28a745;">Cond. IVA:</strong>
-                        <span t-field="o.partner_id.l10n_ar_afip_responsibility_type_id"/><br/>
-                        <strong style="color: #28a745;">CUIT:</strong>
-                        <span t-esc="o.partner_id.vat or ''"/>
-                    </div>
+                        <!-- Separador -->
+                        <td style="width: 4%;"/>
 
-                    <!-- Derecha: Detalles de la factura -->
-                    <div style="width: 48%; border: 1px solid #ccc; padding: 8px; font-size: 11px; line-height: 1.5;">
-                        <strong style="color: #28a745;">Fecha Vencimiento:</strong>
-                        <span t-field="o.invoice_date_due"/><br/>
-                        <strong style="color: #28a745;">Plazos de Pago:</strong>
-                        <span t-field="o.invoice_payment_term_id"/><br/>
-                        <t t-if="o.invoice_origin">
-                            <strong style="color: #28a745;">Origen:</strong>
-                            <span t-field="o.invoice_origin"/><br/>
-                        </t>
-                        <t t-if="o.ref">
-                            <strong style="color: #28a745;">Referencia:</strong>
-                            <span t-field="o.ref"/>
-                        </t>
-                    </div>
-                </div>
+                        <!-- Derecha: Detalles de la factura -->
+                        <td style="width: 48%; border: 1px solid #ccc; padding: 8px; font-size: 11px; line-height: 1.5; vertical-align: top;">
+                            <strong style="color: #28a745;">Fecha Vencimiento:</strong>
+                            <span t-field="o.invoice_date_due"/><br/>
+                            <strong style="color: #28a745;">Plazos de Pago:</strong>
+                            <span t-field="o.invoice_payment_term_id"/><br/>
+                            <t t-if="o.invoice_origin">
+                                <strong style="color: #28a745;">Origen:</strong>
+                                <span t-field="o.invoice_origin"/><br/>
+                            </t>
+                            <t t-if="o.ref">
+                                <strong style="color: #28a745;">Referencia:</strong>
+                                <span t-field="o.ref"/>
+                            </t>
+                        </td>
+                    </tr>
+                </table>
 
                 <!-- ==================== TABLA DE LÍNEAS ==================== -->
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 10px;">
@@ -154,85 +161,42 @@
                 </table>
 
                 <!-- ==================== SECCIÓN INFERIOR: MONEDA + TOTALES ==================== -->
-                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-
-                    <!-- Izquierda: Moneda y tipo de cambio -->
-                    <div style="width: 48%; font-size: 11px;">
-                        <t t-if="is_multimoneda">
-                            <strong style="color: #28a745;">Moneda:</strong>
-                            <span t-field="o.currency_id.name"/> - <span t-field="o.currency_id.currency_unit_label"/><br/>
-                            <strong style="color: #28a745;">Tipo de cambio:</strong>
-                            <span t-esc="'{:,.1f}'.format(o.invoice_currency_rate or 0.0)"/>
-                        </t>
-                    </div>
-
-                    <!-- Derecha: Totales en moneda de la factura -->
-                    <div style="width: 48%;">
-                        <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
-                            <tr style="border-top: 1px solid #000;">
-                                <td style="padding: 3px 5px;"><strong>Subtotal</strong></td>
-                                <td style="text-align: right; padding: 3px 5px;">
-                                    <span t-field="o.amount_untaxed"
-                                          t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                                </td>
-                            </tr>
-                            <!-- Desglose de impuestos via tax_totals (amount_by_group eliminado en Odoo 19) -->
-                            <t t-set="tax_totals_data" t-value="o.tax_totals"/>
-                            <t t-if="tax_totals_data and tax_totals_data.get('groups_by_subtotal')">
-                                <t t-foreach="tax_totals_data['groups_by_subtotal']" t-as="subtotal_group">
-                                    <t t-foreach="tax_totals_data['groups_by_subtotal'][subtotal_group]" t-as="tax_group">
-                                        <tr>
-                                            <td style="padding: 3px 5px;">
-                                                <span t-esc="tax_group.get('tax_group_name', '')"/>
-                                            </td>
-                                            <td style="text-align: right; padding: 3px 5px;">
-                                                <span t-esc="tax_group.get('formatted_tax_group_amount', '')"/>
-                                            </td>
-                                        </tr>
-                                    </t>
-                                </t>
+                <table style="width: 100%; margin-bottom: 10px;">
+                    <tr>
+                        <!-- Izquierda: Moneda y tipo de cambio -->
+                        <td style="width: 48%; font-size: 11px; vertical-align: top;">
+                            <t t-if="is_multimoneda">
+                                <strong style="color: #28a745;">Moneda:</strong>
+                                <span t-field="o.currency_id.name"/> - <span t-field="o.currency_id.currency_unit_label"/><br/>
+                                <strong style="color: #28a745;">Tipo de cambio:</strong>
+                                <span t-esc="'{:,.1f}'.format(o.invoice_currency_rate or 0.0)"/>
                             </t>
-                            <tr style="border-top: 2px solid #000;">
-                                <td style="padding: 3px 5px;"><strong>Total</strong></td>
-                                <td style="text-align: right; padding: 3px 5px;">
-                                    <strong>
-                                        <span t-field="o.amount_total"
-                                              t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
-                                    </strong>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
+                        </td>
 
-                <!-- ==================== IMPUESTOS AR (solo multimoneda) ==================== -->
-                <t t-if="is_multimoneda">
-                    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-                        <div style="width: 48%;">
-                            <table style="width: 100%; font-size: 11px; border-collapse: collapse; border: 1px solid #ccc;">
-                                <tr>
-                                    <td colspan="2" style="padding: 3px 5px; font-weight: bold; background: #f5f5f5;">
-                                        Impuestos AR
-                                    </td>
-                                </tr>
-                                <tr>
+                        <!-- Separador -->
+                        <td style="width: 4%;"/>
+
+                        <!-- Derecha: Totales en moneda de la factura -->
+                        <td style="width: 48%; vertical-align: top;">
+                            <table style="width: 100%; font-size: 11px; border-collapse: collapse;">
+                                <tr style="border-top: 1px solid #000;">
                                     <td style="padding: 3px 5px;"><strong>Subtotal</strong></td>
                                     <td style="text-align: right; padding: 3px 5px;">
-                                        <!-- amount_untaxed_in_currency_signed no existe en Odoo 19, calcular con invoice_currency_rate -->
-                                        <span t-esc="'$ {:,.2f}'.format(o.amount_untaxed * (o.invoice_currency_rate or 1))"/>
+                                        <span t-field="o.amount_untaxed"
+                                              t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                                     </td>
                                 </tr>
-                                <!-- Renombrar a tax_totals_mc para no pisar la variable tax_totals_data del bloque principal -->
-                                <t t-set="tax_totals_mc" t-value="o.tax_totals"/>
-                                <t t-if="tax_totals_mc and tax_totals_mc.get('groups_by_subtotal')">
-                                    <t t-foreach="tax_totals_mc['groups_by_subtotal']" t-as="subtotal_group">
-                                        <t t-foreach="tax_totals_mc['groups_by_subtotal'][subtotal_group]" t-as="tax_group">
+                                <!-- Desglose de impuestos via tax_totals (amount_by_group eliminado en Odoo 19) -->
+                                <t t-set="tax_totals_data" t-value="o.tax_totals"/>
+                                <t t-if="tax_totals_data and tax_totals_data.get('groups_by_subtotal')">
+                                    <t t-foreach="tax_totals_data['groups_by_subtotal']" t-as="subtotal_group">
+                                        <t t-foreach="tax_totals_data['groups_by_subtotal'][subtotal_group]" t-as="tax_group">
                                             <tr>
                                                 <td style="padding: 3px 5px;">
                                                     <span t-esc="tax_group.get('tax_group_name', '')"/>
                                                 </td>
                                                 <td style="text-align: right; padding: 3px 5px;">
-                                                    <span t-esc="'$ {:,.2f}'.format(tax_group.get('tax_group_amount', 0) * (o.invoice_currency_rate or 1))"/>
+                                                    <span t-esc="tax_group.get('formatted_tax_group_amount', '')"/>
                                                 </td>
                                             </tr>
                                         </t>
@@ -242,14 +206,60 @@
                                     <td style="padding: 3px 5px;"><strong>Total</strong></td>
                                     <td style="text-align: right; padding: 3px 5px;">
                                         <strong>
-                                            <!-- amount_total_in_currency_signed no existe en Odoo 19, calcular con invoice_currency_rate -->
-                                            <span t-esc="'$ {:,.2f}'.format(o.amount_total * (o.invoice_currency_rate or 1))"/>
+                                            <span t-field="o.amount_total"
+                                                  t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                                         </strong>
                                     </td>
                                 </tr>
                             </table>
-                        </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- ==================== IMPUESTOS AR (solo multimoneda) ==================== -->
+                <t t-if="is_multimoneda">
+                    <!-- Por qué: float:right en vez de flex-end → compatible wkhtmltopdf -->
+                    <div style="width: 48%; float: right; margin-bottom: 10px;">
+                        <table style="width: 100%; font-size: 11px; border-collapse: collapse; border: 1px solid #ccc;">
+                            <tr>
+                                <td colspan="2" style="padding: 3px 5px; font-weight: bold; background: #f5f5f5;">
+                                    Impuestos AR
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 3px 5px;"><strong>Subtotal</strong></td>
+                                <td style="text-align: right; padding: 3px 5px;">
+                                    <!-- amount_untaxed_in_currency_signed no existe en Odoo 19 -->
+                                    <span t-esc="'$ {:,.2f}'.format(o.amount_untaxed * (o.invoice_currency_rate or 1))"/>
+                                </td>
+                            </tr>
+                            <t t-set="tax_totals_mc" t-value="o.tax_totals"/>
+                            <t t-if="tax_totals_mc and tax_totals_mc.get('groups_by_subtotal')">
+                                <t t-foreach="tax_totals_mc['groups_by_subtotal']" t-as="subtotal_group">
+                                    <t t-foreach="tax_totals_mc['groups_by_subtotal'][subtotal_group]" t-as="tax_group">
+                                        <tr>
+                                            <td style="padding: 3px 5px;">
+                                                <span t-esc="tax_group.get('tax_group_name', '')"/>
+                                            </td>
+                                            <td style="text-align: right; padding: 3px 5px;">
+                                                <span t-esc="'$ {:,.2f}'.format(tax_group.get('tax_group_amount', 0) * (o.invoice_currency_rate or 1))"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </t>
+                            <tr style="border-top: 2px solid #000;">
+                                <td style="padding: 3px 5px;"><strong>Total</strong></td>
+                                <td style="text-align: right; padding: 3px 5px;">
+                                    <strong>
+                                        <!-- amount_total_in_currency_signed no existe en Odoo 19 -->
+                                        <span t-esc="'$ {:,.2f}'.format(o.amount_total * (o.invoice_currency_rate or 1))"/>
+                                    </strong>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
+                    <div style="clear: both;"/>
                 </t>
 
                 <!-- ==================== TÉRMINOS Y CONDICIONES ==================== -->
