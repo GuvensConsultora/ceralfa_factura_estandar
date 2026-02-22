@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Registra "ARCA" como opción en Settings > Document Layout.
+        Por qué: Odoo 19 usa report.layout para listar los layouts disponibles.
+        Cada record apunta a un ir.ui.view (template QWeb) que define header + footer.
+        El wizard base.document.layout graba company.external_report_layout_id = view_id.
+    -->
+    <record id="report_layout_arca" model="report.layout">
+        <field name="name">ARCA</field>
+        <field name="sequence">10</field>
+        <field name="view_id" ref="ceralfa_factura_estandar.external_layout_arca"/>
+    </record>
+
+</odoo>

@@ -1,1 +1,1 @@
-from . import models
+# Módulo puro data/views — sin modelos Python

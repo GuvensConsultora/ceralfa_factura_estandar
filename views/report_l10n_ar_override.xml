@@ -2,21 +2,12 @@
 <odoo>
 
     <!--
-        Mejoras visuales al header estándar argentino (l10n_ar.custom_header).
-        Por qué: El header nativo tiene exceso de espacio y sin identidad visual.
-        Patrón: Herencia XPath → no rompe la cadena de herencia existente (a2systems QR, USD, etc).
-    -->
-    <template id="custom_header_visual" inherit_id="l10n_ar.custom_header">
-        <!-- Fondo sutil y borde inferior al contenedor principal del header -->
-        <xpath expr="//div[@class='mb-3']" position="attributes">
-            <attribute name="style">background: #f8f9fa; border-bottom: 2px solid #dee2e6; padding: 15px 10px; border-radius: 4px;</attribute>
-        </xpath>
-    </template>
-
-    <!--
         Mejoras visuales al documento de factura estándar l10n_ar.
-        Por qué: Mejorar aspecto profesional sin romper herencias existentes.
-        Patrón: Solo modifica atributos de estilo (no estructura) → compatible con cualquier módulo que herede.
+        Por qué: El template l10n_ar.report_invoice_document define el CONTENIDO
+        de la factura (datos cliente, tabla de líneas, totales).
+        El LAYOUT (header/footer) lo maneja external_layout_arca.
+        Estas mejoras aplican al contenido sin importar qué layout esté activo.
+        Patrón: Solo modifica atributos de estilo (no estructura) → compatible con herencias.
     -->
     <template id="l10n_ar_visual_improvements" inherit_id="l10n_ar.report_invoice_document">
 

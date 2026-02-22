@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Layout "ARCA" — Template externo para Settings > Document Layout.
+
+        Por qué: Sigue el patrón exacto de web.external_layout_bold/boxed/standard.
+        Odoo 19 renderiza este template via:
+            web.external_layout → t-call="{{company.external_report_layout_id.sudo().key}}"
+
+        Estructura obligatoria (3 divs hermanos):
+            1. div.header — Logo + datos empresa con info fiscal argentina
+            2. div.article — web.address_layout + layout_document_title + t-out="0" (contenido)
+            3. div.footer — Footer empresa + pager
+
+        Tip: Este layout aplica a TODOS los reportes (facturas, SO, PO, remitos).
+        Los datos fiscales (CUIT, IIBB, IVA) vienen de company → siempre disponibles.
+    -->
+    <template id="external_layout_arca">
+
+        <!-- ==================== HEADER ==================== -->
+        <div t-attf-class="header o_company_#{company.id}_layout" t-att-style="report_header_style">
+            <!--
+                Por qué: Tabla HTML (no flexbox/grid) → compatible wkhtmltopdf.
+                3 columnas: Logo+empresa (38%) | Letra/Código (14%) | Tagline+IVA (38%)
+                La sección central muestra la letra del comprobante solo si el reporte
+                es una factura AR (existe l10n_latam_document_type_id).
+            -->
+            <table style="width: 100%; font-family: Arial, Helvetica, sans-serif;">
+                <tr>
+                    <!-- Izquierda: Logo + datos empresa -->
+                    <td style="width: 42%; vertical-align: top;">
+                        <img t-if="company.logo"
+                             t-att-src="image_data_uri(company.logo)"
+                             style="max-height: 65px; margin-bottom: 8px;"
+                             alt="Logo"/>
+                        <div style="font-size: 10px; line-height: 1.5;">
+                            <strong t-field="company.partner_id.name"/>
+                            <br/>
+                            <span t-field="company.partner_id"
+                                  t-options='{"widget": "contact", "fields": ["address"], "no_marker": true}'/>
+                            <t t-if="company.phone">
+                                Tel: <span t-field="company.phone"/><br/>
+                            </t>
+                            <t t-if="company.website">
+                                <span t-field="company.website"/><br/>
+                            </t>
+                            <t t-if="company.email">
+                                <span t-field="company.email"/>
+                            </t>
+                        </div>
+                    </td>
+
+                    <!--
+                        Centro: Letra grande del comprobante (A/B/C/E) + código AFIP.
+                        Por qué: Solo visible si el documento tiene l10n_latam_document_type_id
+                        (facturas AR). Para SO/PO/remitos esta sección queda vacía.
+                        Patrón: t-if con getattr seguro → evita error en docs sin el campo.
+                    -->
+                    <td style="width: 16%; text-align: center; vertical-align: top;">
+                        <t t-set="doc_type" t-value="o.l10n_latam_document_type_id if 'l10n_latam_document_type_id' in o._fields else False"/>
+                        <t t-if="doc_type">
+                            <t t-set="letra" t-value="doc_type.l10n_ar_letter or ''"/>
+                            <t t-set="cod_afip" t-value="doc_type.code or ''"/>
+                            <div t-if="letra"
+                                 t-attf-style="border: 2px solid #{company.primary_color or '#333'}; display: inline-block; padding: 5px 18px; margin-top: 5px;">
+                                <span style="font-size: 44px; font-weight: bold;" t-esc="letra"/>
+                            </div>
+                            <div t-if="cod_afip" style="font-size: 9px; margin-top: 3px; color: #666;">
+                                Cod. <span t-esc="'%02d' % int(cod_afip) if cod_afip else ''"/>
+                            </div>
+                        </t>
+                    </td>
+
+                    <!-- Derecha: Datos fiscales empresa -->
+                    <td style="width: 42%; text-align: right; vertical-align: top;">
+                        <!--
+                            Por qué: Tagline de empresa (report_header) si está configurado.
+                            Patrón: Mismo campo que usan los layouts estándar de Odoo.
+                        -->
+                        <div t-if="not is_html_empty(company.report_header)"
+                             style="font-size: 11px; margin-bottom: 8px;">
+                            <strong t-field="company.report_header" class="o_company_tagline"/>
+                        </div>
+                        <div style="font-size: 10px; line-height: 1.6; text-align: right;">
+                            <!--
+                                Datos fiscales argentinos.
+                                Por qué: CUIT, IIBB, IVA condition y fecha inicio son de company
+                                (no del documento) → siempre disponibles para cualquier reporte.
+                            -->
+                            <span t-field="company.l10n_ar_afip_responsibility_type_id"/>
+                            <span style="color: #666;"> - CUIT: </span>
+                            <span t-field="company.partner_id.l10n_ar_formatted_vat"/><br/>
+                            <span style="color: #666;">IIBB: </span>
+                            <span t-esc="company.l10n_ar_gross_income_number or 'Exento'"/>
+                            <span style="color: #666;"> - Inicio Act.: </span>
+                            <span t-field="company.l10n_ar_afip_start_date"/>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Línea divisoria con color primario de empresa -->
+            <hr t-attf-style="border: none; border-bottom: 2px solid #{company.primary_color or '#333'}; margin: 8px 0 0 0;"/>
+        </div>
+
+        <!--
+            ==================== ARTICLE ====================
+            Por qué: Contenedor del cuerpo del reporte.
+            - web.address_layout: renderiza dirección del destinatario (patrón Odoo 19)
+            - layout_document_title: título del documento (lo setea cada reporte)
+            - t-out="0": slot donde se inyecta el contenido del reporte
+        -->
+        <t t-set="layout_background_url"
+           t-value="'data:image/png;base64,%s' % company.layout_background_image.decode('utf-8') if company.layout_background_image and company.layout_background == 'Custom' else
+               '/base/static/img/demo_logo_report.png' if company.layout_background == 'Demo logo' else ''"/>
+        <div t-attf-class="article o_report_layout_arca o_table_arca o_company_#{company.id}_layout o_snail_mail {{'o_report_layout_background' if company.layout_background != 'Blank' else ''}}"
+             t-attf-style="{{ 'background-image: url(%s);' % layout_background_url if layout_background_url else '' }}"
+             t-att-data-oe-model="o and o._name"
+             t-att-data-oe-id="o and o.id"
+             t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <t t-call="web.address_layout"/>
+            <h2 t-out="layout_document_title"/>
+            <t t-out="0"/>
+        </div>
+
+        <!-- ==================== FOOTER ==================== -->
+        <div t-attf-class="footer o_company_#{company.id}_layout {{report_type != 'pdf' and 'mt-auto'}}">
+            <!--
+                Por qué: Mismo patrón que external_layout_bold.
+                Footer de empresa + pager (Page X / Y).
+                Borde superior con color primario para identidad visual.
+            -->
+            <div class="o_footer_content d-flex border-top pt-2"
+                 t-attf-style="border-color: #{company.primary_color or '#333'} !important;">
+                <div class="flex-grow-1"
+                     t-attf-class="{{'me-2' if report_type == 'pdf' else ''}}">
+                    <span t-field="company.report_footer"/>
+                </div>
+                <div class="text-end">
+                    <span t-if="report_type == 'pdf' and display_name_in_footer"
+                          class="text-muted" t-out="str(o.name) + ', '">(document name)</span>
+                    <span t-if="report_type == 'pdf'"
+                          class="text-muted text-nowrap">Page <span class="page"/> / <span class="topage"/></span>
+                </div>
+            </div>
+        </div>
+
+    </template>
+
+</odoo>
