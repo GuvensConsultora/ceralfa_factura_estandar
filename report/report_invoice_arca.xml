@@ -176,16 +176,21 @@
                                           t-options='{"widget": "monetary", "display_currency": o.currency_id}'/>
                                 </td>
                             </tr>
-                            <!-- Desglose de impuestos -->
-                            <t t-foreach="o.amount_by_group" t-as="amount_by_group">
-                                <tr>
-                                    <td style="padding: 3px 5px;">
-                                        <span t-esc="amount_by_group[0]"/>
-                                    </td>
-                                    <td style="text-align: right; padding: 3px 5px;">
-                                        <span t-esc="amount_by_group[3]"/>
-                                    </td>
-                                </tr>
+                            <!-- Desglose de impuestos via tax_totals (amount_by_group eliminado en Odoo 19) -->
+                            <t t-set="tax_totals_data" t-value="o.tax_totals"/>
+                            <t t-if="tax_totals_data and tax_totals_data.get('groups_by_subtotal')">
+                                <t t-foreach="tax_totals_data['groups_by_subtotal']" t-as="subtotal_group">
+                                    <t t-foreach="tax_totals_data['groups_by_subtotal'][subtotal_group]" t-as="tax_group">
+                                        <tr>
+                                            <td style="padding: 3px 5px;">
+                                                <span t-esc="tax_group.get('tax_group_name', '')"/>
+                                            </td>
+                                            <td style="text-align: right; padding: 3px 5px;">
+                                                <span t-esc="tax_group.get('formatted_tax_group_amount', '')"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </t>
                             </t>
                             <tr style="border-top: 2px solid #000;">
                                 <td style="padding: 3px 5px;"><strong>Total</strong></td>
@@ -213,14 +218,15 @@
                                 <tr>
                                     <td style="padding: 3px 5px;"><strong>Subtotal</strong></td>
                                     <td style="text-align: right; padding: 3px 5px;">
-                                        <span t-field="o.amount_untaxed_in_currency_signed"
-                                              t-options='{"widget": "monetary", "display_currency": o.company_currency_id}'/>
+                                        <!-- amount_untaxed_in_currency_signed no existe en Odoo 19, calcular con invoice_currency_rate -->
+                                        <span t-esc="'$ {:,.2f}'.format(o.amount_untaxed * (o.invoice_currency_rate or 1))"/>
                                     </td>
                                 </tr>
-                                <t t-set="tax_totals" t-value="o.tax_totals"/>
-                                <t t-if="tax_totals and tax_totals.get('groups_by_subtotal')">
-                                    <t t-foreach="tax_totals['groups_by_subtotal']" t-as="subtotal_group">
-                                        <t t-foreach="tax_totals['groups_by_subtotal'][subtotal_group]" t-as="tax_group">
+                                <!-- Renombrar a tax_totals_mc para no pisar la variable tax_totals_data del bloque principal -->
+                                <t t-set="tax_totals_mc" t-value="o.tax_totals"/>
+                                <t t-if="tax_totals_mc and tax_totals_mc.get('groups_by_subtotal')">
+                                    <t t-foreach="tax_totals_mc['groups_by_subtotal']" t-as="subtotal_group">
+                                        <t t-foreach="tax_totals_mc['groups_by_subtotal'][subtotal_group]" t-as="tax_group">
                                             <tr>
                                                 <td style="padding: 3px 5px;">
                                                     <span t-esc="tax_group.get('tax_group_name', '')"/>
@@ -236,8 +242,8 @@
                                     <td style="padding: 3px 5px;"><strong>Total</strong></td>
                                     <td style="text-align: right; padding: 3px 5px;">
                                         <strong>
-                                            <span t-field="o.amount_total_in_currency_signed"
-                                                  t-options='{"widget": "monetary", "display_currency": o.company_currency_id}'/>
+                                            <!-- amount_total_in_currency_signed no existe en Odoo 19, calcular con invoice_currency_rate -->
+                                            <span t-esc="'$ {:,.2f}'.format(o.amount_total * (o.invoice_currency_rate or 1))"/>
                                         </strong>
                                     </td>
                                 </tr>
