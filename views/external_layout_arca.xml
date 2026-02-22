@@ -85,12 +85,14 @@
                              style="font-size: 11px; margin-bottom: 8px;">
                             <strong t-field="company.report_header" class="o_company_tagline"/>
                         </div>
-                        <div style="font-size: 10px; line-height: 1.6; text-align: right;">
-                            <!--
-                                Datos fiscales argentinos.
-                                Por qué: CUIT, IIBB, IVA condition y fecha inicio son de company
-                                (no del documento) → siempre disponibles para cualquier reporte.
-                            -->
+                        <!--
+                            Datos fiscales argentinos.
+                            Por qué: En preview, company es base.document.layout (wizard),
+                            no res.company → no tiene campos l10n_ar_*.
+                            Guard: verificar existencia del campo antes de renderizar.
+                        -->
+                        <div t-if="'l10n_ar_afip_responsibility_type_id' in company._fields"
+                             style="font-size: 10px; line-height: 1.6; text-align: right;">
                             <span t-field="company.l10n_ar_afip_responsibility_type_id"/>
                             <span style="color: #666;"> - CUIT: </span>
                             <span t-field="company.partner_id.l10n_ar_formatted_vat"/><br/>
