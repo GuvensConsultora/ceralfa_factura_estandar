@@ -15,10 +15,12 @@
     "depends": [
         "account",
         "l10n_ar",
+        "l10n_ar_bank",
     ],
     "data": [
         "views/external_layout_arca.xml",
         "views/report_l10n_ar_override.xml",
+        "views/res_partner_bank_views.xml",
         "data/report_layout.xml",
     ],
     "installable": True,

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Por qué: Agregar checkbox para controlar visibilidad en factura PDF -->
+    <!-- Patrón: Herencia xpath sobre vista form de res.partner.bank -->
+    <record id="view_partner_bank_form_show_invoice" model="ir.ui.view">
+        <field name="name">res.partner.bank.form.show_invoice</field>
+        <field name="model">res.partner.bank</field>
+        <field name="inherit_id" ref="base.view_partner_bank_form"/>
+        <field name="arch" type="xml">
+            <field name="acc_number" position="after">
+                <field name="show_on_invoice"/>
+            </field>
+        </field>
+    </record>
+</odoo>
