@@ -101,11 +101,33 @@ Para volver al formato estándar de Odoo:
 3. Desactivar checkbox **"Modelo Factura ARCA"**
 4. Las próximas impresiones usan el template estándar
 
+### Paso 4 — Configurar datos bancarios (CBU) en la factura
+
+Por defecto Odoo NO muestra los CBU de la empresa en el PDF de la factura. Este módulo agrega una sección "Datos bancarios" debajo de los totales, pero solo muestra las cuentas bancarias que el usuario elija.
+
+1. Ir a **Contactos** → abrir la **empresa propia** (My Company)
+2. Ir a la pestaña **Contabilidad** → sección **Cuentas bancarias**
+3. Abrir cada cuenta bancaria que se quiera mostrar en la factura
+4. Activar el checkbox **"Mostrar en factura"**
+5. Guardar
+
+```
+Contactos
+  └── [Mi Empresa]
+        └── Pestaña: Contabilidad
+              └── Cuentas bancarias
+                    └── [Cuenta bancaria]
+                          └── ☑ Mostrar en factura
+```
+
+**Resultado**: En el PDF de la factura aparece una tabla debajo de los totales con columnas: Banco, CBU y Nro. Cuenta — solo para las cuentas marcadas.
+
 ### Notas de configuración
 
 - **No requiere configuración global**: se activa contacto por contacto
 - **No afecta facturas existentes**: el formato se determina al momento de imprimir, no al crear la factura
 - **Compatible con multimoneda**: si la factura está en USD (u otra moneda), el reporte muestra una sección extra "Impuestos AR" con los importes convertidos a pesos usando el tipo de cambio de la factura
+- **CBU selectivo**: solo las cuentas bancarias de la empresa con "Mostrar en factura" activo aparecen en el PDF. Si ninguna cuenta está marcada, la sección no se muestra
 
 ---
 
@@ -120,9 +142,12 @@ ceralfa_factura_estandar/
 ├── models/
 │   ├── __init__.py
 │   ├── res_partner.py                 # Campo x_modelo_factura_arca (Boolean)
+│   ├── res_partner_bank.py            # Campo show_on_invoice (Boolean)
 │   └── account_move.py                # Override _get_name_invoice_report()
 ├── views/
-│   └── res_partner_views.xml          # Checkbox en pestaña Contabilidad del contacto
+│   ├── res_partner_views.xml          # Checkbox en pestaña Contabilidad del contacto
+│   ├── res_partner_bank_views.xml     # Checkbox "Mostrar en factura" en cuentas bancarias
+│   └── report_l10n_ar_override.xml    # Mejoras visuales + sección CBU en factura
 └── report/
     └── report_invoice_arca.xml        # Template QWeb standalone
 ```
@@ -132,6 +157,7 @@ ceralfa_factura_estandar/
 | Modelo | Tipo | Campo/Método | Descripción |
 |--------|------|-------------|-------------|
 | `res.partner` | Herencia | `x_modelo_factura_arca` (Boolean) | Flag para activar reporte ARCA |
+| `res.partner.bank` | Herencia | `show_on_invoice` (Boolean) | Controla qué cuentas bancarias aparecen en el PDF |
 | `account.move` | Herencia | `_get_name_invoice_report()` | Retorna template ARCA si el partner tiene el flag |
 
 ### Método `_get_name_invoice_report()`

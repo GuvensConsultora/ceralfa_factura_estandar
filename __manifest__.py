@@ -1,6 +1,6 @@
 {
     "name": "Ceralfa Layout ARCA",
-    "version": "19.0.2.0.0",
+    "version": "2.0.0",
     "category": "Accounting/Localizations",
     "summary": "Layout de documento ARCA argentino para Settings > Document Layout",
     "description": """
