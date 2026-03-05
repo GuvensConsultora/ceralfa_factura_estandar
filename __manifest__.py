@@ -21,6 +21,7 @@
         "views/external_layout_arca.xml",
         "views/report_l10n_ar_override.xml",
         "views/res_partner_bank_views.xml",
+        "views/account_move_views.xml",
         "data/report_layout.xml",
     ],
     "installable": True,

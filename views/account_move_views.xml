@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Agregar campos "Anticipo" y "Forma de pago convenida" en la factura.
+        Por qué: Facu quiere estos datos visibles en el PDF.
+        Ubicación: debajo de invoice_payment_term_id en la pestaña "Otra info"
+        o en el header de la factura.
+    -->
+    <record id="view_move_form_inherit_forma_pago" model="ir.ui.view">
+        <field name="name">account.move.form.inherit.forma.pago</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <!-- Agregar después de payment_term_id en la zona superior -->
+            <field name="invoice_payment_term_id" position="after">
+                <field name="x_anticipo"
+                       invisible="move_type not in ('out_invoice', 'out_refund')"/>
+                <field name="x_forma_pago_convenida"
+                       invisible="move_type not in ('out_invoice', 'out_refund')"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>
