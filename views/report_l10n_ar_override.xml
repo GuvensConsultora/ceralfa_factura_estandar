@@ -39,4 +39,39 @@
 
     </template>
 
+    <!--
+        Mover "Impuestos AR" (company currency totals) a la izquierda de la página,
+        a la misma altura que los subtotales en moneda extranjera (derecha).
+        Por qué: El cuadro de Impuestos AR queda mejor como referencia visual a la izquierda,
+        dejando los totales en moneda de factura a la derecha (patrón izq=referencia, der=principal).
+    -->
+    <template id="l10n_ar_impuestos_ar_left" inherit_id="l10n_ar.report_invoice_document">
+
+        <!-- 1. Insertar Impuestos AR a la izquierda, antes de right-elements -->
+        <xpath expr="//div[@id='right-elements']" position="before">
+            <t t-if="o.tax_totals and o.tax_totals.get('display_in_company_currency')">
+                <t t-set="tax_totals" t-value="o.tax_totals"/>
+                <!-- Safety net: asegurar keys Enterprise en dict Community -->
+                <t t-foreach="tax_totals.get('subtotals', [])" t-as="_sub">
+                    <t t-set="_" t-value="_sub.setdefault('amount_company_currency', _sub.get('base_amount', 0))"/>
+                    <t t-foreach="_sub.get('tax_groups', [])" t-as="_tg">
+                        <t t-set="_" t-value="_tg.setdefault('tax_amount_company_currency', _tg.get('tax_amount', 0))"/>
+                        <t t-set="_" t-value="_tg.setdefault('display_base_amount_company_currency', _tg.get('display_base_amount', False))"/>
+                    </t>
+                </t>
+                <t t-set="_" t-value="tax_totals.setdefault('total_amount_company_currency', tax_totals.get('total_amount', 0))"/>
+                <div class="mt-5 d-inline-block float-start" style="width: 40%;">
+                    <t t-call="account.document_tax_totals_company_currency_template"/>
+                </div>
+            </t>
+        </xpath>
+
+        <!-- 2. Ocultar Impuestos AR original dentro de right-elements (ya lo mostramos a la izq) -->
+        <xpath expr="//t[@t-call='account.document_tax_totals_company_currency_template']/.."
+               position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+
+    </template>
+
 </odoo>
